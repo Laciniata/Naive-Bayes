@@ -8,9 +8,12 @@ def data_init():
     """
     初始化数据和属性集。
 
-    Returns: (数据, 属性集)
+    Returns:
+        train_set (list): 训练集
+        test_set (list): 测试集
+        attributes (list): 属性集
+        is_discrete (list): 属性是否离散
     """
-
     train_set = [['青绿', '蜷缩', '浊响', '清晰', '凹陷', '硬滑', 0.697, 0.460, '好瓜'],
                  ['乌黑', '蜷缩', '沉闷', '清晰', '凹陷', '硬滑', 0.774, 0.376, '好瓜'],
                  ['乌黑', '蜷缩', '浊响', '清晰', '凹陷', '硬滑', 0.634, 0.264, '好瓜'],
@@ -44,8 +47,10 @@ def generate_dataframe(data: list, attributes: list, one_dimensional: bool = Fal
     Args:
         data (list): 数据集
         attributes (list): 属性集
+        one_dimensional (bool = False): 是否是一维列表，用于处理只有单个样例的集合，例如is_discrete
 
-    Returns: pd.DataFrame
+    Returns:
+        frame (pd.DataFrame): 数据集
     """
     column = attributes.copy()
     if one_dimensional:
@@ -61,12 +66,13 @@ def generate_dataframe(data: list, attributes: list, one_dimensional: bool = Fal
 
 def get_result_frame(data: pd.DataFrame):
     """
+    初始化概率表，行标签为类别，列标签为属性，表格内数据为概率。
 
     Args:
-        data ():
+        data (pd.DataFrame): 训练集
 
     Returns:
-
+        frame (pd.DataFrame): 概率表
     """
     col = data.columns
     row_count = data['类型'].value_counts()
@@ -77,6 +83,15 @@ def get_result_frame(data: pd.DataFrame):
 
 
 def calculate_type_prior_probability(data: pd.DataFrame):
+    """
+    计算类先验概率，包含拉普拉斯修正。
+
+    Args:
+        data (pd.DataFrame): 训练集
+
+    Returns:
+        tpp (pd.Series): 类先验概率，index为类别
+    """
     counts = data['类型'].value_counts()
     tpp = pd.Series(index=counts.index, dtype='float64')
     for i in tpp.index:
@@ -85,6 +100,18 @@ def calculate_type_prior_probability(data: pd.DataFrame):
 
 
 def train_naive_bayes(train: pd.DataFrame, test: pd.DataFrame, is_discrete_frame: pd.DataFrame):
+    """
+    训练朴素贝叶斯分类器，并对测试集进行判别
+
+    Args:
+        train (pd.DataFrame): 训练集
+        test (pd.DataFrame): 测试集
+        is_discrete_frame (pd.DataFrame): 属性是否离散
+
+    Returns:
+        result_frames (pd.DataFrame): 概率表
+    """
+    # 待优化：拆分成训练和判别两个函数，训练部分对所有属性所有取值计算，存储在使用MultiIndex的DataFrame中，避免重复计算
     result_frames = []
     result_frame = get_result_frame(train)
     types = result_frame.index.tolist()
@@ -118,6 +145,14 @@ def train_naive_bayes(train: pd.DataFrame, test: pd.DataFrame, is_discrete_frame
 
 
 def judge_naive_bayes(result_frames: 'list[pd.DataFrame]'):
+    """
+
+    Args:
+        result_frames ():
+
+    Returns:
+
+    """
     judge_results = []
     for result_frame in result_frames:
         result_frame['概率'] = result_frame.prod(axis=1)
