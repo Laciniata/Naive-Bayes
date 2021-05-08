@@ -3,7 +3,6 @@ import numpy as np
 import scipy.stats
 
 
-# tested
 def data_init():
     """
     初始化数据和属性集。
@@ -39,7 +38,6 @@ def data_init():
     return train_set, test_set, attributes, is_discrete
 
 
-# tested
 def generate_dataframe(data: list, attributes: list, one_dimensional: bool = False):
     """
     将数据集转化为DataFrame类型。
@@ -111,7 +109,7 @@ def train_naive_bayes(train: pd.DataFrame, test: pd.DataFrame, is_discrete_frame
     Returns:
         result_frames (pd.DataFrame): 概率表
     """
-    # 待优化：拆分成训练和判别两个函数，训练部分对所有属性所有取值计算，存储在使用MultiIndex的DataFrame中，避免重复计算
+    # TODO:待优化。拆分成训练和判别两个函数，训练部分对所有属性所有取值计算，存储在使用MultiIndex的DataFrame中，避免重复计算
     result_frames = []
     result_frame = get_result_frame(train)
     types = result_frame.index.tolist()
@@ -146,12 +144,13 @@ def train_naive_bayes(train: pd.DataFrame, test: pd.DataFrame, is_discrete_frame
 
 def judge_naive_bayes(result_frames: 'list[pd.DataFrame]'):
     """
+    计算朴素贝叶斯概率的连乘结果，并返回分类判别结果
 
     Args:
-        result_frames ():
+        result_frames ('list[pd.DataFrame]'): 概率表，在本函数中添加一个'概率'列
 
     Returns:
-
+        judge_results (list): 分类判别结果
     """
     judge_results = []
     for result_frame in result_frames:
@@ -162,6 +161,17 @@ def judge_naive_bayes(result_frames: 'list[pd.DataFrame]'):
 
 
 def split_data_set(data: list, attributes: list):
+    """
+    将带标签的数据集分为属性（无标签）和标签两部分。
+
+    Args:
+        data (list): 数据集
+        attributes (list): 属性集
+
+    Returns:
+        data_without_type (pd.DataFrame): 属性（无标签）
+        category_label (list): 标签
+    """
     data_frame = pd.DataFrame(data)
     data_without_type = data_frame.iloc[:, 0:data_frame.shape[1] - 1]
     data_without_type.columns = attributes
@@ -171,6 +181,18 @@ def split_data_set(data: list, attributes: list):
 
 def calculate_percision(train: pd.DataFrame, test: pd.DataFrame, is_discrete_frame: pd.DataFrame,
                         category_label: list):
+    """
+    使用朴素贝叶斯对测试集分类，并计算精度。
+
+    Args:
+        train (pd.DataFrame): 训练集
+        test (pd.DataFrame): 测试集（不带标签）
+        is_discrete_frame (pd.DataFrame): 属性是否离散
+        category_label (list): 测试集标签
+
+    Returns:
+        precision_of_classify (float): 精度
+    """
     result_frames = train_naive_bayes(train, test, is_discrete_frame)
     judge_results = judge_naive_bayes(result_frames)
     print('原始标签:\n', category_label)
@@ -179,10 +201,11 @@ def calculate_percision(train: pd.DataFrame, test: pd.DataFrame, is_discrete_fra
     for i in range(len(category_label)):
         if judge_results[i] != category_label[i]:
             wrong_count += 1
-            print('-----------------------------')
+            print('------------------------------')
             print('第{}个数据预测错误，数据如下：\n'.format(i), train.loc[i], '\n\n朴素贝叶斯概率如下：\n', result_frames[i], sep='')
-    print('-----------------------------')
-    return 1 - wrong_count / len(category_label)
+    print('------------------------------')
+    precision_of_classify = 1 - wrong_count / len(category_label)
+    return precision_of_classify
 
 
 if __name__ == '__main__':
