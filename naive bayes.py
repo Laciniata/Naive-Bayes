@@ -84,7 +84,7 @@ def calculate_type_prior_probability(data: pd.DataFrame):
     return tpp
 
 
-def train_naive_bayes(train: pd.DataFrame, test: pd.DataFrame, is_discrete_frame):
+def train_naive_bayes(train: pd.DataFrame, test: pd.DataFrame, is_discrete_frame: pd.DataFrame):
     result_frames = []
     result_frame = get_result_frame(train)
     types = result_frame.index.tolist()
@@ -126,14 +126,43 @@ def judge_naive_bayes(result_frames: 'list[pd.DataFrame]'):
     return judge_results
 
 
+def split_data_set(data: list, attributes: list):
+    data_frame = pd.DataFrame(data)
+    data_without_type = data_frame.iloc[:, 0:data_frame.shape[1] - 1]
+    data_without_type.columns = attributes
+    category_label = data_frame.loc[:, data_frame.shape[1] - 1].tolist()
+    return data_without_type, category_label
+
+
+def calculate_percision(train: pd.DataFrame, test: pd.DataFrame, is_discrete_frame: pd.DataFrame,
+                        category_label: list):
+    result_frames = train_naive_bayes(train, test, is_discrete_frame)
+    judge_results = judge_naive_bayes(result_frames)
+    print('原始标签:\n', category_label)
+    print('测试集判别结果:\n', judge_results)
+    wrong_count = 0
+    for i in range(len(category_label)):
+        if judge_results[i] != category_label[i]:
+            wrong_count += 1
+            print('-----------------------------')
+            print('第{}个数据预测错误，数据如下：\n'.format(i), train.loc[i], '\n\n朴素贝叶斯概率如下：\n', result_frames[i], sep='')
+    print('-----------------------------')
+    return 1 - wrong_count / len(category_label)
+
+
 if __name__ == '__main__':
+    # 设置ipython中pandas表格显示宽度
     pd.set_option('display.width', 400)
     pd.set_option('display.max_columns', 10)
-
+    # 用测1样本判别
     train_set_array, test_set_array, attributes, is_discrete = data_init()
     train_set = generate_dataframe(train_set_array, attributes)
     test_set = generate_dataframe(test_set_array, attributes)
     is_discrete_frame = generate_dataframe(is_discrete, attributes, True)
     result_frames = train_naive_bayes(train_set, test_set, is_discrete_frame)
     judge_results = judge_naive_bayes(result_frames)
-    print(judge_results)
+    print("测1判别结果：", judge_results)
+    # 用训练集判别
+    data_without_type, category_label = split_data_set(train_set_array, attributes)
+    precision = calculate_percision(train_set, data_without_type, is_discrete_frame, category_label)
+    print("精度:", precision)
