@@ -28,14 +28,16 @@ def data_init():
                  ['浅白', '蜷缩', '浊响', '模糊', '平坦', '硬滑', 0.593, 0.042, '坏瓜'],
                  ['青绿', '蜷缩', '沉闷', '稍糊', '稍凹', '硬滑', 0.719, 0.103, '坏瓜']
                  ]
-    test_set = [['青绿', '蜷缩', '浊响', '清晰', '凹陷', '硬滑', 0.697, 0.460]]
+    test_set = [['青绿', '蜷缩', '浊响', '清晰', '凹陷', '硬滑', 0.697, 0.460],
+                ['青绿', '蜷缩', '沉闷', '稍糊', '稍凹', '硬滑', 0.719, 0.103]
+                ]
     attributes = ['色泽', '根蒂', '敲声', '纹理', '脐部', '触感', '密度', '含糖率']
     is_discrete = [True, True, True, True, True, True, False, False]
     return train_set, test_set, attributes, is_discrete
 
 
 # tested
-def generate_dataframe(data: list, attributes: list):
+def generate_dataframe(data: list, attributes: list, one_dimensional: bool = False):
     """
     将数据集转化为DataFrame类型。
 
@@ -46,9 +48,14 @@ def generate_dataframe(data: list, attributes: list):
     Returns: pd.DataFrame
     """
     column = attributes.copy()
-    if len(data[0]) == len(attributes) + 1:
-        column.append('类型')
-    frame = pd.DataFrame(data, columns=column)
+    if one_dimensional:
+        if len(data) == len(attributes) + 1:
+            column.append('类型')
+        frame = pd.DataFrame([data], columns=column)
+    else:
+        if len(data[0]) == len(attributes) + 1:
+            column.append('类型')
+        frame = pd.DataFrame(data, columns=column)
     return frame
 
 
@@ -70,15 +77,41 @@ def get_result_frame(data: pd.DataFrame):
     return frame
 
 
-def train_naive_bayes(train: pd.DataFrame, test: pd.DataFrame):
-    result = get_result_frame(train)
-    for attribute in test.columns:
-        value = test.iloc[0][attribute]
-        # probability =
+def train_naive_bayes(train: pd.DataFrame, test: pd.DataFrame, is_discrete_frame):
+    result_frames = []
+    result_frame = get_result_frame(train)
+    types = result_frame.index.tolist()
+    for i, test_sample in test.iterrows():
+        result_frame_temp = result_frame.copy(deep=True)
+        for attribute in test.columns:
+            value = test_sample[attribute]
+
+            # 对每种类别，计算概率
+            # 离散情况
+            if is_discrete_frame.loc[0, attribute]:
+                for type in types:
+                    # 获得该类型的train视图，再获得该类型下该取值的视图，二者行数求比值得到概率
+                    frame_of_type = train[train['类型'] == type]
+                    frame_of_type_and_value = frame_of_type[frame_of_type[attribute] == value]
+                    probability = (frame_of_type_and_value.shape[0] + 1) / frame_of_type.shape[0]  # TODO: 拉普拉斯修正
+                    result_frame_temp.loc[type, attribute] = probability
+            # 连续情况
+            else:
+                for type in types:
+                    # 统计平均值和方差，代入正态分布
+                    frame_of_type = train[train['类型'] == type]
+                    mean = frame_of_type.loc[:, attribute].mean()
+                    variance = frame_of_type.loc[:, attribute].std()
+                    print()
+        result_frames.append(result_frame_temp)
+    return result_frames
 
 
 if __name__ == '__main__':
     train_set_array, test_set_array, attributes, is_discrete = data_init()
     train_set = generate_dataframe(train_set_array, attributes)
     test_set = generate_dataframe(test_set_array, attributes)
-    train_naive_bayes(train_set, test_set)
+    is_discrete_frame = generate_dataframe(is_discrete, attributes, True)
+    result_frames = train_naive_bayes(train_set, test_set, is_discrete_frame)
+    # for rf in result_frames:
+    #     print(rf)
