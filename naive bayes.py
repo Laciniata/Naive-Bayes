@@ -175,7 +175,7 @@ def split_data_set(data: list, attributes: list):
     data_frame = pd.DataFrame(data)
     data_without_type = data_frame.iloc[:, 0:data_frame.shape[1] - 1]
     data_without_type.columns = attributes
-    category_label = data_frame.loc[:, data_frame.shape[1] - 1].tolist()
+    category_label = data_frame.iloc[:, data_frame.shape[1] - 1].tolist()
     return data_without_type, category_label
 
 
