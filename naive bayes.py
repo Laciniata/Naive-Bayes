@@ -179,7 +179,7 @@ def split_data_set(data: list, attributes: list):
     return data_without_type, category_label
 
 
-def calculate_percision(train: pd.DataFrame, test: pd.DataFrame, is_discrete_frame: pd.DataFrame,
+def calculate_precision(train: pd.DataFrame, test: pd.DataFrame, is_discrete_frame: pd.DataFrame,
                         category_label: list):
     """
     使用朴素贝叶斯对测试集分类，并计算精度。
@@ -222,5 +222,5 @@ if __name__ == '__main__':
     print("测1判别结果：", judge_results)
     # 用训练集判别
     data_without_type, category_label = split_data_set(train_set_array, attributes)
-    precision = calculate_percision(train_set, data_without_type, is_discrete_frame, category_label)
+    precision = calculate_precision(train_set, data_without_type, is_discrete_frame, category_label)
     print("精度:", precision)
